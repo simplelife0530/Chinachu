@@ -17,56 +17,74 @@ var dateFormat = require('dateformat');
 var execSync   = require('execsync');
 
 export enum ECategory {
-    anime,
-    information,
-    news,
-    sports,
-    variety,
-    drama,
-    music,
-    cinema,
-    etc
+    anime = 0,
+    information = 1,
+    news = 2,
+    sports = 3,
+    variety = 4,
+    drama = 5,
+    music = 6,
+    cinema = 7,
+    etc = 8
 }
 
 export enum EChannelType {
-    GR,
-    BS,
-    CS,
-    EX
+    GR = 0,
+    BS = 10,
+    CS = 20,
+    EX = 100
 }
 
 export enum EMediaContainer {
-    'MPEG-2 TS',
-    'MPEG-4',
-    WebM
+    'MPEG-2 TS' = 0,
+    'MPEG-4' = 1,
+    WebM = 2
 }
 
 export enum EVideoType {
-    'MPEG-4 AVC',
-    'MPEG-4 Part 2',
-    'MPEG-2',
-    VP9,
-    VP8
+    'MPEG-4 AVC' = 0,
+    'MPEG-4 Part 2' = 1,
+    'MPEG-2' = 2,
+    VP9 = 3,
+    VP8 = 4
 }
 
 export enum EAudioType {
-    AAC,
-    Vorbis
+    AAC = 0,
+    Vorbis = 1
 }
 
 export enum ERecordingOption {
-    '1seg',
-    'norec'
+    '1seg' = 0,
+    norec = 1
 }
 
 export enum EDay {
-    sun,
-    mon,
-    tue,
-    wed,
-    thu,
-    fri,
-    sat
+    sun = 0,
+    mon = 1,
+    tue = 2,
+    wed = 3,
+    thu = 4,
+    fri = 5,
+    sat = 6
+}
+
+export enum EProgramTaskType {
+    encode = 0,
+    script = 1,
+    cmcut = 2
+}
+
+export enum EProgramTaskOption {
+    unchain = 0,
+    async = 1
+}
+
+export enum EProgramTaskStatus {
+    running = 1,
+    completed = 2,
+    failed = 3,
+    pausing = 4
 }
 
 export interface ILogLevel {
@@ -120,7 +138,13 @@ export interface IProgram {
 }
 
 export interface IProgramTask {
-    // todo
+    type: EProgramTaskType;
+    options?: EProgramTaskOption[];
+    status?: EProgramTaskStatus;
+    removeSource?: boolean;
+    transcoder?: ITranscoder;
+    script?: string;
+    nice?: number;
 }
 
 export interface ITranscoder {
@@ -183,6 +207,7 @@ export interface IRule {
     reserve_descriptions?: string[];
     ignore_descriptions?: string[];
     recordingOptions?: ERecordingOption[];
+    tasks?: IProgramTask[];
 }
 
 export var LOG_ERROR: ILogLevel = {
