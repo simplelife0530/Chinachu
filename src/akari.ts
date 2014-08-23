@@ -113,6 +113,7 @@ export interface ITuner {
     command: string;
     isScrambling: boolean;
     group?: string;
+    isDisabled?: boolean;
 }
 
 export interface ITunerGroup {
