@@ -26,14 +26,16 @@ export enum ECategory {
     music = 6,
     cinema = 7,
     etc = 8,
-    various = 100
+    various = 100,
+    radio = 200
 }
 
 export enum EChannelType {
     GR = 0,
     BS = 10,
     CS = 20,
-    EX = 100
+    EX = 100,
+    IR = 200
 }
 
 export enum EMediaContainer {
@@ -52,7 +54,8 @@ export enum EVideoType {
 
 export enum EAudioType {
     AAC = 0,
-    Vorbis = 1
+    Vorbis = 1,
+    MP3 = 2
 }
 
 export enum ERecordingOption {
@@ -202,6 +205,10 @@ export interface IRule {
     duration?: {
         min?: number;
         max?: number;
+    };
+    freetime?: {
+        start: number;
+        end: number;
     };
     days?: EDay[];
     reserve_titles?: string[];
