@@ -25,7 +25,8 @@ export enum ECategory {
     drama = 5,
     music = 6,
     cinema = 7,
-    etc = 8
+    etc = 8,
+    various = 100
 }
 
 export enum EChannelType {
@@ -56,7 +57,8 @@ export enum EAudioType {
 
 export enum ERecordingOption {
     '1seg' = 0,
-    norec = 1
+    norec = 1,
+    freetime = 2
 }
 
 export enum EDay {
@@ -117,7 +119,7 @@ export interface IProgram {
     seconds: number;
     channel: IChannel;
     category: ECategory;
-    flags: string;
+    flags: string[];
     episode: number;
     title: string;
     subTitle: string;
