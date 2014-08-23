@@ -108,11 +108,15 @@ export interface IChannel {
 }
 
 export interface ITuner {
-    n: number;
     name: string;
     types: EChannelType[];
     command: string;
     isScrambling: boolean;
+    group?: string;
+}
+
+export interface ITunerGroup {
+    controlWait?: number;
 }
 
 export interface IProgram {
