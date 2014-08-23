@@ -101,10 +101,11 @@ export interface ILogLevel {
 export interface IChannel {
     n: number;
     id: string;
-    sid: string;
+    sid?: string;
     channel: string;
     name: string;
     type: EChannelType;
+    isDisabled?: boolean;
 }
 
 export interface ITuner {
