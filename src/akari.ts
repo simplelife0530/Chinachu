@@ -334,20 +334,19 @@ export function getProgramById(id: string, array: any[]): IProgram {
     }());
 };
 
-exports.existsTuner = function (tuners, type, callback) {
+export function existsTuner(tuners: ITuner[], type: EChannelType, callback: (boolean) => void): void {
 
     process.nextTick(function () {
         callback(exports.existsTunerSync(tuners, type));
     });
 };
 
-exports.existsTunerSync = function (tuners, type) {
+export function existsTunerSync(tuners: ITuner[], type: EChannelType): boolean {
 
-    var j, tuner, isExists = false;
+    var i, tuner, isExists = false;
 
-    for (j = 0; tuners.length > j; j++) {
-        tuner = tuners[j];
-        tuner.n = j;
+    for (i = 0; tuners.length > i; i++) {
+        tuner = tuners[i];
 
         if (tuner.types.indexOf(type) !== -1) {
             isExists = true;
@@ -358,20 +357,19 @@ exports.existsTunerSync = function (tuners, type) {
     return isExists;
 };
 
-exports.getFreeTunerSync = function (tuners, type) {
+export function getFreeTunerSync(tuners: ITuner[], type: EChannelType): ITuner {
 
-    var j, exists, pid, tuner, freeTuner = null;
+    var i, exists, pid, tuner: ITuner, freeTuner = null;
 
-    for (j = 0; tuners.length > j; j++) {
-        tuner = tuners[j];
-        tuner.n = j;
+    for (i = 0; tuners.length > i; i++) {
+        tuner = tuners[i];
 
         if (tuner.types.indexOf(type) === -1) {
             continue;
         }
 
-        if (fs.existsSync('./data/tuner.' + j + '.lock') === true) {
-            pid = fs.readFileSync('./data/tuner.' + j + '.lock', { encoding: 'utf8' });
+        if (fs.existsSync('./data/tuner.' + tuner.name + '.lock') === true) {
+            pid = fs.readFileSync('./data/tuner.' + tuner.name + '.lock', { encoding: 'utf8' });
             pid = pid.trim();
 
             if (pid === '') {
@@ -392,47 +390,47 @@ exports.getFreeTunerSync = function (tuners, type) {
     return freeTuner;
 };
 
-exports.lockTuner = function (tuner, callback) {
-    fs.writeFile('./data/tuner.' + tuner.n + '.lock', process.pid, { flag: 'wx' }, callback);
+export function lockTuner(tuner: ITuner, callback: (error) => void): void {
+    fs.writeFile('./data/tuner.' + tuner.name + '.lock', process.pid, { flag: 'wx' }, callback);
 };
 
-exports.lockTunerSync = function (tuner) {
+export function lockTunerSync(tuner: ITuner): void {
     try {
-        return fs.writeFileSync('./data/tuner.' + tuner.n + '.lock', process.pid, { flag: 'wx' });
+        return fs.writeFileSync('./data/tuner.' + tuner.name + '.lock', process.pid, { flag: 'wx' });
     } catch (e) {
         throw e;
     }
 };
 
-exports.unlockTuner = function (tuner, callback) {
-    fs.unlink('./data/tuner.' + tuner.n + '.lock', callback);
+export function unlockTune(tuner: ITuner, callback: (error) => void): void {
+    fs.unlink('./data/tuner.' + tuner.name + '.lock', callback);
 };
 
-exports.unlockTunerSync = function (tuner, safe) {
+export function unlockTunerSync(tuner: ITuner, safe: boolean): void {
     try {
         if (safe === true) {
-            var pid = fs.readFileSync('./data/tuner.' + tuner.n + '.lock', { encoding: 'utf8' });
+            var pid = fs.readFileSync('./data/tuner.' + tuner.name + '.lock', { encoding: 'utf8' });
             if (pid !== '') {
                 if (execSync('kill -0 ' + pid) === '') {
                     return null;
                 } else {
-                    return fs.unlinkSync('./data/tuner.' + tuner.n + '.lock');
+                    return fs.unlinkSync('./data/tuner.' + tuner.name + '.lock');
                 }
             }
         }
-        return fs.unlinkSync('./data/tuner.' + tuner.n + '.lock');
+        return fs.unlinkSync('./data/tuner.' + tuner.name + '.lock');
     } catch (e) {
         throw e;
     }
 };
 
-exports.writeTunerPid = function (tuner, pid, callback) {
-    fs.writeFile('./data/tuner.' + tuner.n + '.lock', pid, { flag: 'w' }, callback);
+export function writeTunerPid(tuner: ITuner, pid: number, callback: (error) => void): void {
+    fs.writeFile('./data/tuner.' + tuner.name + '.lock', pid, { flag: 'w' }, callback);
 };
 
-exports.writeTunerPidSync = function (tuner, pid) {
+export function writeTunerPidSync(tuner: ITuner, pid: number): void {
     try {
-        return fs.writeFileSync('./data/tuner.' + tuner.n + '.lock', pid, { flag: 'w' });
+        return fs.writeFileSync('./data/tuner.' + tuner.name + '.lock', pid, { flag: 'w' });
     } catch (e) {
         throw e;
     }
@@ -456,17 +454,17 @@ Countdown.prototype = {
     }
 };
 
-exports.createCountdown = function (a, b) {
+export function createCountdown(a, b) {
     return new Countdown(a, b);
 };
 
-exports.createTimeout = function (a, b) {
+export function createTimeout(a, b: number): any {
     return function () {
         return setTimeout(a, b);
     };
 };
 
-exports.formatRecordedName = function (program, name) {
+export function formatRecordedName(program: IProgram, name: string): string {
     name = name.replace(/<([^>]+)>/g, function (z, a) {
 
         // date:
@@ -513,7 +511,7 @@ exports.formatRecordedName = function (program, name) {
 };
 
 // strip
-exports.stripFilename = function (a) {
+export function stripFilename(a: string): string {
 
     a = a.replace(/\//g, '／').replace(/\\/g, '＼').replace(/:/g, '：').replace(/\*/g, '＊').replace(/\?/g, '？');
     a = a.replace(/"/g, '”').replace(/</g, '＜').replace(/>/g, '＞').replace(/\|/g, '｜').replace(/≫/g, '＞＞');
@@ -521,7 +519,7 @@ exports.stripFilename = function (a) {
     return a;
 };
 
-exports.isMatchedProgram = function (rules: IRule[], program: IProgram): boolean {
+export function isMatchedProgram(rules: IRule[], program: IProgram): boolean {
 
     var result = false;
 
