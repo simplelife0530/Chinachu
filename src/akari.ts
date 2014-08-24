@@ -223,6 +223,7 @@ export interface IRule {
     ignore_descriptions?: string[];
     recordingOptions?: ERecordingOption[];
     tasks?: IProgramTask[];
+    isDisabled?: boolean;
 }
 
 export var LOG_ERROR: ILogLevel = {
@@ -520,7 +521,7 @@ exports.stripFilename = function (a) {
     return a;
 };
 
-exports.isMatchedProgram = function (rules, program) {
+exports.isMatchedProgram = function (rules: IRule[], program: IProgram): boolean {
 
     var result = false;
 
@@ -530,9 +531,6 @@ exports.isMatchedProgram = function (rules, program) {
 
         // isDisabled
         if (rule.isDisabled) { return; }
-
-        // sid
-        if (rule.sid && rule.sid !== program.channel.sid) { return; }
 
         // types
         if (rule.types) {
@@ -557,9 +555,6 @@ exports.isMatchedProgram = function (rules, program) {
                 return;
             }
         }
-
-        // category
-        if (rule.category && rule.category !== program.category) { return; }
 
         // categories
         if (rule.categories) {
@@ -588,6 +583,11 @@ exports.isMatchedProgram = function (rules, program) {
         // duration
         if (rule.duration && (typeof rule.duration.min !== 'undefined') && (typeof rule.duration.max !== 'undefined')) {
             if ((rule.duration.min > program.seconds) || (rule.duration.max < program.seconds)) { return; }
+        }
+
+        // days
+        if (rule.days) {
+            if (rule.days.indexOf(new Date(program.start).getDay()) === -1) { return; }
         }
 
         // reserve_titles
