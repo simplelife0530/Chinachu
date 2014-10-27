@@ -19,6 +19,7 @@ Introducing Chinachu Usushio
 * Operator Service
   * continuous EPG updater
   * transcoder
+  * network tuner access
   * internet radio recorder *(TBD)*
 * Server Service
   * REST API v2
