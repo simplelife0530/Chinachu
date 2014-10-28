@@ -52,7 +52,7 @@ cd ~/chinachu/ # your Chinachu installed directory
 rm -rfv .git
 curl https://cvm.chinachu.moe/install.sh | bash
 ./cvm.sh install latest
-ln -s ./chinachu ~/bin/chinachu // optional
+ln -s ./chinachu ~/bin/chinachu # optional
 ```
 
 ##### B) using Git for Advanced / Developers
