@@ -33,42 +33,52 @@ Introducing Chinachu Usushio
 ### How to Update
 
 #### Uninstall the Chinachu Beta
-1. `sudo -i`
-2. `/etc/init.d/chinachu-wui stop` or `service chinachu-wui stop`
-3. `/etc/init.d/chinachu-operator stop` or `service chinachu-operator stop`
-4. `insserv -r chinachu-wui`
-5. `insserv -r chinachu-operator`
-6. `rm -v /etc/init.d/chinachu-wui /etc/init.d/chinachu-operator`
-7.  `exit`
+```sh
+sudo -i
+/etc/init.d/chinachu-wui stop` or `service chinachu-wui stop
+/etc/init.d/chinachu-operator stop` or `service chinachu-operator stop
+insserv -r chinachu-wui
+insserv -r chinachu-operator
+rm -v /etc/init.d/chinachu-wui /etc/init.d/chinachu-operator
+exit
+```
 
 #### Install the Chinachu Usushio
 
 ##### A) using Chinachu Version Manager
-1. `cd ~/chinachu/` (your Chinachu installed directory)
-2. `rm -rfv .git`
-3. `curl https://cvm.chinachu.moe/cvm.sh > cvm.sh && chmod +x cvm.sh`
-4. `./cvm.sh install latest`
-5. `ln -s ./chinachu ~/bin/chinachu` (optional)
+```sh
+cd ~/chinachu/ // your Chinachu installed directory
+rm -rfv .git
+curl https://cvm.chinachu.moe/install.sh | bash
+./cvm.sh install latest
+ln -s ./chinachu ~/bin/chinachu // optional
+```
 
 ##### B) using Git for Advanced / Developers
-1. `cd ~/chinachu/` (your Chinachu installed directory)
-2. `git reset --hard HEAD^`
-3. `git fetch`
-4. `git checkout master-usushio`
-5. `make && make clean`
+```sh
+cd ~/chinachu/ // your Chinachu installed directory
+git reset --hard HEAD^
+git fetch
+git checkout master-usushio
+make && make clean
+```
 
 #### Migration to Usushio from Beta
-1. `curl https://cvm.chinachu.moe/migration-scripts/beta-config.js | ./chinachu test node` *(TBD)*
-2. `curl https://cvm.chinachu.moe/migration-scripts/beta-rules.js | ./chinachu test node` *(TBD)*
-3. `curl https://cvm.chinachu.moe/migration-scripts/beta-recorded.js | ./chinachu test node` *(TBD)*
+```sh
+curl https://cvm.chinachu.moe/migration-scripts/beta-config.js | bash
+curl https://cvm.chinachu.moe/migration-scripts/beta-rules.js | bash
+curl https://cvm.chinachu.moe/migration-scripts/beta-recorded.js | bash
+```
 
 #### Install the Chinachu Usushio Services
-1. `./chinachu service mirakurun initscript > /tmp/chinachu-mirakurun`
-2. `./chinachu service operator initscript > /tmp/chinachu-operator`
-3. `./chinachu service server initscript > /tmp/chinachu-server`
-4. `sudo chown root:root /tmp/chinachu-*`
-5. `sudo chmod +x /tmp/chinachu-*`
-6. `sudo mv -v /tmp/chinachu-mirakurun /tmp/chinachu-operator /tmp/chinachu-server /etc/init.d/`
-7. `sudo insserv chinachu-mirakurun` *(TBD)*
-8. `sudo insserv chinachu-operator` *(TBD)*
-9. `sudo insserv chinachu-server` *(TBD)*
+```sh
+./chinachu service mirakurun initscript > /tmp/chinachu-mirakurun
+./chinachu service operator initscript > /tmp/chinachu-operator
+./chinachu service server initscript > /tmp/chinachu-server
+sudo chown root:root /tmp/chinachu-*
+sudo chmod +x /tmp/chinachu-*
+sudo mv -v /tmp/chinachu-mirakurun /tmp/chinachu-operator /tmp/chinachu-server /etc/init.d/
+sudo insserv chinachu-mirakurun
+sudo insserv chinachu-operator
+sudo insserv chinachu-server
+```
