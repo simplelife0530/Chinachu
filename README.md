@@ -29,6 +29,7 @@ Introducing Chinachu Usushio
 * WUI Client
   * TV view
   * frame cutter
+  * channel scan
 
 ### How to Update
 
@@ -47,7 +48,7 @@ exit
 
 ##### A) using Chinachu Version Manager
 ```sh
-cd ~/chinachu/ // your Chinachu installed directory
+cd ~/chinachu/ # your Chinachu installed directory
 rm -rfv .git
 curl https://cvm.chinachu.moe/install.sh | bash
 ./cvm.sh install latest
@@ -56,7 +57,7 @@ ln -s ./chinachu ~/bin/chinachu // optional
 
 ##### B) using Git for Advanced / Developers
 ```sh
-cd ~/chinachu/ // your Chinachu installed directory
+cd ~/chinachu/ # your Chinachu installed directory
 git reset --hard HEAD^
 git fetch
 git checkout master-usushio
