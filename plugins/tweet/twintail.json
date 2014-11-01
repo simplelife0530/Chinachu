@@ -3,7 +3,7 @@
   "description": "Auto Tweet to Twitter",
   "version": "0.0.1",
 
-  "homepage": "http://chinachu.akkar.in/",
+  "homepage": "https://chinachu.moe/",
   "author": {
     "name": "Yuki KAN",
     "url": "https://github.com/kanreisa"
@@ -23,6 +23,6 @@
   },
 
   "target": {
-    "operator": "tweet.ts"
+    "operator": "tweet.js"
   }
 }

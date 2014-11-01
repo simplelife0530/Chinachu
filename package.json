@@ -1,9 +1,9 @@
 {
   "name": "chinachu",
-  "description": "An open-source EPG digital video recorder system for Linux.",
+  "description": "Chinachu is an Open Source Digital Video Recorder System for Linux.",
   "version": "1.0.0",
-  "private": false,
-  "homepage": "http://chinachu.akkar.in/",
+  "private": true,
+  "homepage": "https://chinachu.moe/",
   "author": {
     "name": "Yuki KAN",
     "url": "https://github.com/kanreisa"
@@ -24,20 +24,21 @@
   "dependencies": {
     "dateformat": "^1.0.8-1.2.3",
     "easy-table": "^0.2.0",
+    "execsync": "0.0.5",
     "http-auth": "^1.2.9",
+    "mkdirp": "^0.3.5",
     "opts": "^1.2.2",
     "socket.io": "^0.9.17",
-    "mkdirp": "^0.3.5",
-    "spdy": "^1.14.15",
+    "spdy": "^1.29.1",
     "string": "^1.5.1",
-    "execsync": "0.0.5",
+    "tingodb": "^0.3.0",
     "typescript-require": "^0.2.6"
   },
   "devDependencies": {
-    "typescript": "^1.0.1",
-    "gulp": "^3.7.0",
-    "gulp-mocha": "^0.4.1",
-    "gulp-tsc": "^0.9.0"
+    "gulp": "^3.8.9",
+    "gulp-mocha": "^1.1.1",
+    "gulp-tsc": "^0.9.2",
+    "typescript": "^1.1.0-1"
   },
   "scripts": {
     "test": "gulp",
@@ -45,6 +46,6 @@
     "watch": "gulp watch"
   },
   "engines": {
-    "node": ">=0.10.13"
+    "node": ">=0.10.29"
   }
 }
