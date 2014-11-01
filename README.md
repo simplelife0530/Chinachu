@@ -12,11 +12,12 @@ Introducing Chinachu Usushio
 
 ### What's New?
 * **Mirakurun** Service
-  * tuner pooler / manager
+  * tuner pooler / manager / server
   * tuner failover
   * tuner grouping
   * TCP / UNIX domain socket M2TS packet streaming
 * Operator Service
+  * embedded program database
   * continuous EPG updater
   * transcoder
   * network tuner access
@@ -30,6 +31,8 @@ Introducing Chinachu Usushio
   * TV view
   * frame cutter
   * channel scan
+* Extra
+  * Munin plugins
 
 ### How to Update
 
