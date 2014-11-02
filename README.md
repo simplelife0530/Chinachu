@@ -8,16 +8,15 @@ Introducing Chinachu Usushio
 ----------------------------
 * Work in progress. This does **NOT** work yet.
 
-![](https://yabumi.cc/1480f9929280d2ba07c8ac12.png)
+![](https://yabumi.cc/14971e96771cbbbb08a85070.png)
 
 ### What's New?
 * **Mirakurun** Service
   * tuner pooler / manager / server
   * tuner failover
   * tuner grouping
-  * TCP / UNIX domain socket M2TS packet streaming
+  * TCP / UNIX domain socket MPEG-2 TS packet streaming
 * Operator Service
-  * embedded program database
   * continuous EPG updater
   * transcoder
   * network tuner access
