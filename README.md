@@ -38,8 +38,8 @@ Introducing Chinachu Usushio
 #### Uninstall the Chinachu Beta
 ```sh
 sudo -i
-/etc/init.d/chinachu-wui stop` or `service chinachu-wui stop
-/etc/init.d/chinachu-operator stop` or `service chinachu-operator stop
+/etc/init.d/chinachu-wui stop # or service chinachu-wui stop
+/etc/init.d/chinachu-operator stop # or service chinachu-operator stop
 insserv -r chinachu-wui
 insserv -r chinachu-operator
 rm -v /etc/init.d/chinachu-wui /etc/init.d/chinachu-operator
