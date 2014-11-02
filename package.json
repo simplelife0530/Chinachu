@@ -27,11 +27,12 @@
     "execsync": "0.0.5",
     "http-auth": "^1.2.9",
     "mkdirp": "^0.3.5",
+    "mongoose": "^3.8.18",
     "opts": "^1.2.2",
     "socket.io": "^0.9.17",
     "spdy": "^1.29.1",
     "string": "^1.5.1",
-    "tingodb": "^0.3.0",
+    "tungus": "0.0.2",
     "typescript-require": "^0.2.6"
   },
   "devDependencies": {
