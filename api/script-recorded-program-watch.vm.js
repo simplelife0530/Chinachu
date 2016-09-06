@@ -6,20 +6,20 @@ if (program === null) {
 }
 
 function init() {
-	
+
 	if (!data.status.feature.streamer) return response.error(403);
-	
+
 	if (program.tuner && program.tuner.isScrambling) return response.error(409);
-	
+
 	if (!fs.existsSync(program.recorded)) return response.error(410);
-	
+
 	// probing
-	child_process.exec('avprobe -v 0 -show_format -of json "' + program.recorded + '"', function (err, std) {
-		
+	child_process.exec('ffprobe -v 0 -show_format -of json "' + program.recorded + '"', function (err, std) {
+
 		if (err) {
 			return response.error(500);
 		}
-		
+
 		try {
 			main(JSON.parse(std));
 		} catch (e) {
@@ -29,54 +29,22 @@ function init() {
 }
 
 function main(avinfo) {
-	
-	if (request.query.debug) util.log(JSON.stringify(avinfo, null, '  '));
-	
+
+	if (request.query.debug) {
+		util.log(JSON.stringify(avinfo, null, '  '));
+		util.log(JSON.stringify(request.headers, null, '  '));
+	}
+
 	switch (request.type) {
-		// HTTP Live Streaming (Experimental)
-		case 'txt'://for debug
-		case 'm3u8':
-			response.head(200);
-			
-			var current = parseInt(avinfo.format.duration, 10);
-			
-			var d = {
-				t    : request.query.t      || '10',//duration(seconds)
-				s    : request.query.s      || '1024x576',//size(WxH)
-				'c:v': request.query['c:v'] || 'libx264',//vcodec
-				'c:a': request.query['c:a'] || 'libfdk_aac',//acodec
-				'b:v': request.query['b:v'] || '1M',//bitrate
-				'b:a': request.query['b:a'] || '96k'//ab
-			};
-			
-			d.t = parseInt(d.t, 10);
-			
-			response.write('#EXTM3U\n');
-			response.write('#EXT-X-VERSION:3\n');
-			response.write('#EXT-X-TARGETDURATION:' + d.t + '\n');
-			response.write('#EXT-X-MEDIA-SEQUENCE:0\n');
-			
-			var target = request.query.prefix || '';
-			target += 'watch.m2ts?t=' + d.t + '&c:v=' + d['c:v'] + '&c:a=' + d['c:a'];
-			target += '&b:v=' + d['b:v'] + '&s=' + d.s + '&b:a=' + d['b:a'];
-			
-			for (var i = 0; i < current; i += d.t) {
-				response.write('#EXTINF:' + d.t + ',\n');
-				response.write(target + '&ss=' + i + '\n');
-			}
-			
-			response.end('#EXT-X-ENDLIST');
-			return;
-		
 		case 'xspf':
 			response.setHeader('content-disposition', 'attachment; filename="' + program.id + '.xspf"');
 			response.head(200);
-			
+
 			var ext    = request.query.ext || 'm2ts';
 			var prefix = request.query.prefix || '';
-			
+
 			var target = prefix + 'watch.' + ext  + url.parse(request.url).search;
-			
+
 			response.write('<?xml version="1.0" encoding="UTF-8"?>\n');
 			response.write('<playlist version="1" xmlns="http://xspf.org/ns/0/">\n');
 			response.write('<trackList>\n');
@@ -84,19 +52,17 @@ function main(avinfo) {
 			response.write('<title>' + program.title + '</title>\n</track>\n');
 			response.write('</trackList>\n');
 			response.write('</playlist>\n');
-			
+
 			response.end();
 			return;
-		
+
 		case 'm2ts':
-		case 'f4v':
-		case 'flv':
 		case 'webm':
-		case 'asf':
+		case 'mp4':
 			util.log('STREAMING: ' + request.url);
-			
+
 			var d = {
-				ss   : request.query.ss     || '0', //start(seconds)
+				ss   : request.query.ss     || '2', //start(seconds)
 				t    : request.query.t      || null,//duration(seconds)
 				s    : request.query.s      || null,//size(WxH)
 				f    : request.query.f      || null,//format
@@ -107,11 +73,15 @@ function main(avinfo) {
 				ar   : request.query.ar     || null,//ar(Hz)
 				r    : request.query.r      || null//rate(fps)
 			};
-			
+
+			if (parseInt(d.ss, 10) < 2) {
+				d.ss = '2';
+			}
+
 			if (parseInt(d.ss, 10) > parseFloat(avinfo.format.duration)) {
 				return response.error(416);
 			}
-			
+
 			// Convert humanized size String to Bitrate
 			var bitrate = 0;
 			var videoBitrate = 0;
@@ -137,7 +107,7 @@ function main(avinfo) {
 			if (videoBitrate !== 0 && audioBitrate !== 0) {
 				bitrate = videoBitrate + audioBitrate;
 			}
-			
+
 			// Caluculate Total Size
 			var isize    = parseInt(avinfo.format.size, 10);
 			var ibitrate = parseFloat(avinfo.format.bit_rate);
@@ -151,27 +121,31 @@ function main(avinfo) {
 			if (d.t) {
 				tsize = tsize / parseFloat(avinfo.format.duration) * parseInt(d.t, 10);
 			} else {
-				if (d.ss !== '0') {
-					tsize -= bitrate / 8 * parseInt(d.ss, 10);
-				}
+				tsize -= bitrate / 8 * (parseInt(d.ss, 10) - 2);
 			}
 			tsize = Math.floor(tsize);
-			
+
 			// Ranges Support
 			var range = {};
-			if (d.ss !== '0') {
-				range.start = parseInt(ibitrate / 8 * (parseInt(d.ss, 10) - 1), 10);
-				
+			if (request.type === 'mp4') {
+				range.start = parseInt(ibitrate / 8 * (parseInt(d.ss, 10) - 2), 10);
+
 				response.setHeader('Content-Length', tsize);
-				
+
+				response.head(200);
+			} else if (d.ss !== '2') {
+				range.start = parseInt(ibitrate / 8 * (parseInt(d.ss, 10) - 2), 10);
+
+				response.setHeader('Content-Length', tsize);
+
 				response.head(200);
 			} else if (request.headers.range) {
 				var bytes = request.headers.range.replace(/bytes=/, '').split('-');
 				var rStart = parseInt(bytes[0], 10);
-				var rEnd   = parseInt(bytes[1], 10) || tsize - 1;
+				var rEnd   = parseInt(bytes[1], 10) || tsize - 2;
 
-				range.start = rStart / bitrate * ibitrate;
-				range.end   = rEnd / bitrate * ibitrate;
+				range.start = Math.round(rStart / bitrate * ibitrate);
+				range.end   = Math.round(rEnd / bitrate * ibitrate);
 				if (range.start > isize || range.end > isize) {
 					return response.error(416);
 				}
@@ -186,54 +160,46 @@ function main(avinfo) {
 
 				response.head(200);
 			}
-			
+
 			switch (request.type) {
 				case 'm2ts':
 					d.f      = 'mpegts';
 					d['c:v'] = d['c:v'] || 'libx264';
-					d['c:a'] = d['c:a'] || 'libfdk_aac';
+					d['c:a'] = d['c:a'] || 'libvo_aacenc';
+					break;
+				case 'mp4':
+					d.f      = 'mp4';
+					d['c:v'] = d['c:v'] || 'libx264';
+					d['c:a'] = d['c:a'] || 'libvo_aacenc';
 					break;
 				case 'webm':
 					d.f      = 'webm';
 					d['c:v'] = d['c:v'] || 'libvpx';
 					d['c:a'] = d['c:a'] || 'libvorbis';
 					break;
-				case 'flv':
-					d.f      = 'flv';
-					d['c:v'] = d['c:v'] || 'flv';
-					d['c:a'] = d['c:a'] || 'libfdk_aac';
-					break;
-				case 'f4v':
-					d.f      = 'flv';
-					d['c:v'] = d['c:v'] || 'libx264';
-					d['c:a'] = d['c:a'] || 'libfdk_aac';
-					break;
-				case 'asf':
-					d.f      = 'asf';
-					d['c:v'] = d['c:v'] || 'wmv2';
-					d['c:a'] = d['c:a'] || 'wmav2';//or libfdk_aac ?
-					break;
 			}
-			
+
 			var args = [];
-			
+
 			if (!request.query.debug) args.push('-v', '0');
-			
+
 			args.push('-i', 'pipe:0');
-			
-			if (d.ss !== '0') args.push('-ss', '1');
-			
+
+			args.push('-ss', '2');
+
 			if (d.t) { args.push('-t', d.t); }
-			
+
 			args.push('-threads', 'auto');
-			
+
 			if (d['c:v']) args.push('-c:v', d['c:v']);
 			if (d['c:a']) args.push('-c:a', d['c:a']);
-			
+
 			if (d.s)  args.push('-s', d.s);
 			if (d.r)  args.push('-r', d.r);
 			if (d.ar) args.push('-ar', d.ar);
-			
+
+			args.push('-filter:v', 'yadif');
+
 			if (d['b:v']) {
 				args.push('-b:v', d['b:v'], '-minrate:v', d['b:v'], '-maxrate:v', d['b:v']);
 				args.push('-bufsize:v', videoBitrate * 8);
@@ -242,45 +208,55 @@ function main(avinfo) {
 				args.push('-b:a', d['b:a'], '-minrate:a', d['b:a'], '-maxrate:a', d['b:a']);
 				args.push('-bufsize:a', audioBitrate * 8);
 			}
-			
-			//if (format === 'flv')     { args.push('-vsync', '2'); }
-			if (d['c:v'] === 'libx264') args.push('-preset', 'ultrafast');
-			if (d['c:v'] === 'libvpx')  args.push('-deadline', 'realtime');
-			
+
+			if (d['c:v'] === 'libx264') {
+				args.push('-profile:v', 'baseline');
+				args.push('-preset', 'ultrafast');
+				args.push('-tune', 'fastdecode,zerolatency');
+			}
+			if (d['c:v'] === 'libvpx') {
+				args.push('-deadline', 'realtime');
+				args.push('-cpu-used', '-16');
+			}
+
+			if (d.f === 'mp4') {
+				args.push('-movflags', 'frag_keyframe+empty_moov+faststart');
+			}
+
 			args.push('-y', '-f', d.f, 'pipe:1');
-			
+
 			var readStream = fs.createReadStream(program.recorded, range || {});
-			
+
 			request.on('close', function() {
 				readStream.destroy();
 			});
-			
+
 			if (d['c:v'] === 'copy' && d['c:a'] === 'copy' && !d.t) {
 				readStream.pipe(response);
 			} else {
-				var avconv = child_process.spawn('avconv', args);
+				var ffmpeg = child_process.spawn('ffmpeg', args);
+				children.push(ffmpeg.pid);
+				util.log('SPAWN: ffmpeg ' + args.join(' ') + ' (pid=' + ffmpeg.pid + ')');
 
-				avconv.stdout.pipe(response);
-				
-				readStream.pipe(avconv.stdin);
+				ffmpeg.stdout.pipe(response);
 
-				avconv.stderr.on('data', function(d) {
-					util.log('#avconv: ' + d);
+				readStream.pipe(ffmpeg.stdin);
+
+				ffmpeg.stderr.on('data', function(d) {
+					util.log('#ffmpeg: ' + d);
 				});
 
-				avconv.on('exit', function(code) {
-					setTimeout(function() { response.end(); }, 1000);
+				ffmpeg.on('exit', function() {
+					response.end();
 				});
 
 				request.on('close', function() {
-					avconv.stdout.removeAllListeners('data');
-					avconv.stderr.removeAllListeners('data');
-					avconv.kill('SIGKILL');
+					ffmpeg.stdout.removeAllListeners('data');
+					ffmpeg.stderr.removeAllListeners('data');
+					ffmpeg.kill('SIGKILL');
 				});
-				
-				children.push(avconv);// 安全対策
 			}
-			
+
 			return;
 	}//<--switch
 

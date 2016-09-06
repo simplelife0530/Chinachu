@@ -307,7 +307,7 @@
 			this.data.scrollEnd   = [0, 0];
 			this.data.target      = null;
 			
-			var unitlen = this.unitlen = 60;
+			var unitlen = this.unitlen = 50;
 			var linelen      = 140;
 			var types        = JSON.parse(window.localStorage.getItem('schedule.visible.types') || '["GR", "BS", "CS", "EX"]');
 			var categories   = this.categories = JSON.parse(window.localStorage.getItem('schedule.visible.categories') || '["anime", "information", "news", "sports", "variety", "drama", "music", "cinema", "etc"]');
@@ -383,10 +383,7 @@
 				});
 				
 				channel.programs.forEach(function (program, j) {
-					if (program.start + 7200000 < timeRangeStart || program.start > timeRangeEnd + 3600000) {
-						return;
-					}
-					if ((program.end - this.time) < 0) {
+					if (program.end + 7200000 < timeRangeStart || program.start > timeRangeEnd + 3600000) {
 						return;
 					}
 					
@@ -428,6 +425,9 @@
 				}
 				if (program.isSkip) {
 					piece[program.id].isSkip = true;
+				}
+				if (program.isConflict) {
+					piece[program.id].isConflict = true;
 				}
 			});
 			
@@ -981,6 +981,9 @@
 											var dummy = new chinachu.ui.Skip(a.program.id);
 										}
 									});
+								}
+								if (a.isConflict) {
+									a._rect.addClassName('conflict');
 								}
 							} else {
 								contextMenuItems.unshift({

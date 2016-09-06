@@ -12,13 +12,23 @@
 	
 	response.head(200);
 	
-	var width  = request.query.width  || '320';
-	var height = request.query.height || '180';
+	var width  = request.query.width;
+	var height = request.query.height;
 	
 	if (request.query.size && (request.query.size.match(/^[1-9][0-9]{0,3}x[1-9][0-9]{0,3}$/) !== null)) {
 		width  = request.query.size.split('x')[0];
 		height = request.query.size.split('x')[1];
 	}
+
+	width = parseInt(width, 10).toString(10);
+	height = parseInt(height, 10).toString(10);
+	if (width === 'NaN' || width === '0') width = '320';
+	if (height === 'NaN' || height === '0') height = '180';
+	
+	width = parseInt(width, 10).toString(10);
+	height = parseInt(height, 10).toString(10);
+	if (width === 'NaN' || width === '0') width = '320';
+	if (height === 'NaN' || height === '0') height = '180';
 	
 	var vcodec = 'mjpeg';
 	
@@ -34,7 +44,7 @@
 	
 	var ffmpeg = child_process.exec(
 		(
-			'avconv -f mpegts -ss ' + pos + ' -r 10 -i "' + program.recorded + '" -ss 1.5 -r 10 -frames:v 1' +
+			'ffmpeg -f mpegts -ss ' + pos + ' -r 10 -i "' + program.recorded + '" -ss 1.5 -r 10 -frames:v 1' +
 			' -c:v ' + vcodec + ' -an -f image2 -s ' + width + 'x' + height + ' -map 0:0 -y pipe:1'
 		)
 		,

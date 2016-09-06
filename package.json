@@ -1,6 +1,6 @@
 {
   "name": "chinachu",
-  "description": "A open source EPG digital video recorder system for Linux.",
+  "description": "An open source EPG digital video recorder system for Linux.",
   "version": "0.0.1",
   "private": true,
   "homepage": "https://chinachu.moe/",
@@ -25,16 +25,16 @@
   "dependencies": {
     "dateformat": "~1.0.6-1.2.3",
     "easy-table": "~0.2.0",
-    "http-auth": "~1.2.9",
+    "geoip-lite": "^1.1.6",
+    "hoard": "~0.1.5",
+    "http-auth": "^2.2.8",
+    "mkdirp": "~0.3.5",
+    "mtwitter": "~1.5.2",
     "opts": "~1.2.2",
     "socket.io": "~0.9.16",
-    "xml2js": "~0.2.8",
-    "mkdirp": "~0.3.5",
-    "spdy": "~1.14.15",
     "string": "~1.5.1",
-    "mtwitter": "~1.5.2",
-    "hoard": "~0.1.5",
-    "execsync": "0.0.5"
+    "chinachu-upnp-server": "^0.0.2",
+    "xml2js": "~0.2.8"
   },
   "devDependencies": {
     "mocha": "*",
@@ -45,6 +45,6 @@
     "test": "mocha -R spec"
   },
   "engines": {
-    "node": ">=0.10.13"
+    "node": ">=0.12.0"
   }
 }

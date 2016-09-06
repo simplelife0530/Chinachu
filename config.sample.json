@@ -5,6 +5,7 @@
   "wuiUsers": [
     "akari:bakuhatsu"
   ],
+  "wuiAllowCountries": ["JP"],
   
   "wuiPort"        : 10772,
   "wuiHost"        : "::",
@@ -12,6 +13,7 @@
   "wuiTlsCertPath" : null,
   "wuiOpenServer"  : false,
   "wuiOpenPort"    : 20772,
+  "wuiXFF"         : false,
   "wuiPreviewer"   : true,
   "wuiStreamer"    : true,
   "wuiFiler"       : true,

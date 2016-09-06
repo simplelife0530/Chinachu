@@ -5,7 +5,6 @@
  *  https://chinachu.moe/
 **/
 /*jslint node:true, nomen:true, plusplus:true, regexp:true, vars:true, continue:true */
-/*global gc */
 'use strict';
 
 var PID_FILE = __dirname + '/data/scheduler.pid';
@@ -23,7 +22,7 @@ var child_process = require('child_process');
 
 // ディレクトリチェック
 if (!fs.existsSync('./data/') || !fs.existsSync('./log/') || !fs.existsSync('./web/')) {
-	util.error('必要なディレクトリが存在しないか、カレントワーキングディレクトリが不正です。');
+	console.error('必要なディレクトリが存在しないか、カレントワーキングディレクトリが不正です。');
 	process.exit(1);
 }
 
@@ -162,8 +161,17 @@ function outputReserves() {
 function scheduler() {
 	
 	var i, j, k, l, a;
+	var commandProcess;
 	
 	util.log('RUNNING SCHEDULER.');
+
+	// schedulerStartフック
+	if (!opts.get('s')) {
+		if (config.schedulerStartCommand) {
+			commandProcess = child_process.spawnSync(config.schedulerStartCommand, [process.pid, RULES_FILE, RESERVES_DATA_FILE, SCHEDULE_DATA_FILE]);
+			util.log('SPAWN: ' + config.schedulerStartCommand + ' (pid=' + commandProcess.pid + ')');
+		}
+	}
 	
 	// IDが重複しているかチェックするだけ
 	var idMap = {};
@@ -171,7 +179,7 @@ function scheduler() {
 		ch.programs.forEach(function (p) {
 			if (idMap[p.id]) {
 				util.log('**WARNING**: ' + p.id + ' is duplicated!');
-				util.puts(JSON.stringify(idMap[p.id], null, '  '), JSON.stringify(p, null, '  '));
+				console.log(JSON.stringify(idMap[p.id], null, '  '), JSON.stringify(p, null, '  '));
 			} else {
 				idMap[p.id] = p;
 			}
@@ -206,15 +214,26 @@ function scheduler() {
 	});
 	
 	reserves.forEach(function (reserve) {
+		var i, l;
 		if (reserve.isManualReserved) {
 			if (reserve.start + 86400000 > Date.now()) {
+				for (i = 0, l = matches.length; i < l; i++) {
+					if (matches[i].id === reserve.id) {
+						// ルールと重複していた場合、ルール予約が手動予約に優先するよう、matchesにpushせずreturnする
+						util.log('OVERRIDEBYRULE: ' + reserve.id + ' ' + dateFormat(new Date(reserve.start), 'isoDateTime') + ' [' + reserve.channel.name + '] ' + reserve.title);
+						return;
+					}
+				}
+				var isOneseg = reserve['1seg'] === true;
 				reserve = chinachu.getProgramById(reserve.id, schedule) || reserve;
 				reserve.isManualReserved = true;
+				if (isOneseg === true) {
+					reserve['1seg'] = true;
+				}
 				matches.push(reserve);
 			}
 			return;
 		}
-		var i, l;
 		if (reserve.isSkip) {
 			for (i = 0, l = matches.length; i < l; i++) {
 				if (matches[i].id === reserve.id) {
@@ -297,6 +316,12 @@ function scheduler() {
 			util.log('!CONFLICT: ' + a.id + ' ' + dateFormat(new Date(a.start), 'isoDateTime') + ' [' + a.channel.name + '] ' + a.title);
 			
 			++conflictCount;
+			var commandProcess;
+			// conflict フック
+			if (config.conflictCommand) {
+				commandProcess = child_process.spawn(config.conflictCommand, [process.pid, a.id, dateFormat(new Date(a.start), 'isoDateTime'), a.channel.name, a.title, JSON.stringify(a)]);
+				util.log('SPAWN: ' + config.conflictCommand + ' (pid=' + commandProcess.pid + ')');
+			}
 		}
 	}
 	
@@ -307,18 +332,29 @@ function scheduler() {
 	for (i = 0; i < matches.length; i++) {
 		a = matches[i];
 		
-		if (!a.isConflict && !a.isDuplicate) {
+		if (!a.isDuplicate) {
 			reserves.push(a);
 			
 			if (a.isSkip) {
 				util.log('!!!SKIP: ' + a.id + ' ' + dateFormat(new Date(a.start), 'isoDateTime') + ' [' + a.channel.name + '] ' + a.title);
 				++skipCount;
-			} else {
+			} else if (!a.isConflict) {
 				util.log('RESERVE: ' + a.id + ' ' + dateFormat(new Date(a.start), 'isoDateTime') + ' [' + a.channel.name + '] ' + a.title);
 				++reservedCount;
+			} else {
+				// 競合したときのログは既に出力済み
 			}
 		}
 	}
+	
+	// ruleにもしあればreserveにrecordedFormatを追加
+	reserves.forEach(function(reserve){
+		rules.forEach(function(rule){
+			if(typeof(rule.recorded_format) !== 'undefined' && chinachu.programMatchesRule(rule, reserve)){
+				reserve.recordedFormat = rule.recorded_format;
+			}
+		});
+	});
 	
 	// results
 	util.log('MATCHES: ' + matches.length.toString(10));
@@ -329,6 +365,11 @@ function scheduler() {
 	
 	if (!opts.get('s')) {
 		outputReserves();
+		// schedulerEnd フック
+		if (config.schedulerEndCommand) {
+			commandProcess = child_process.spawn(config.schedulerEndCommand, [process.pid, RULES_FILE, RESERVES_DATA_FILE, SCHEDULE_DATA_FILE, matches.length.toString(10), duplicateCount.toString(10), conflictCount.toString(10), skipCount.toString(10), reservedCount.toString(10)]);
+			util.log('SPAWN: ' + config.schedulerEndCommand + ' (pid=' + commandProcess.pid + ')');
+		}
 	}
 	
 	// プロセス終了
@@ -348,15 +389,18 @@ function convertPrograms(p, ch) {
 			continue;
 		}
 		
-		var title = c.title[0]._
+		var title = c.title[0]._;
+		
+		title = title
 			.replace(/【.{1,2}】/g, '')
 			.replace(/\[.\]/g, '')
-			.replace(/アニメ「([^「」]+)」/g, '$1')
-			.replace(/([^場版])「.+」/g, '$1')
-			.replace(/(#|＃|♯)[0-9０１２３４５６７８９]+/g, '')
-			.replace(/第([0-9]+|[０１２３４５６７８９零一壱二弐三参四五伍六七八九十拾]+)話/g, '')
-			.replace(/([0-9]+|[０１２３４５６７８９]+)憑目/g, '')
-			.trim();
+			.replace(/[「（#＃♯第]+[0-9０-９零一壱二弐三参四五伍六七八九十拾]+[話回」）]*/g, '');
+		
+		if (c.category[1]._ === 'anime') {
+			title = title.replace(/(?:TV|ＴＶ)?アニメ「([^「」]+)」/g, '$1');
+		}
+		
+		title = title.trim();
 		
 		var desc = c.desc[0]._ || '';
 		
@@ -380,56 +424,55 @@ function convertPrograms(p, ch) {
 		}
 		
 		var episodeNumber = null;
-		if (flags.indexOf('新') !== -1) {
+		var episodeNumberMatch = (c.title[0]._ + ' ' + desc).match(/[「（#＃♯第]+[0-9０-９零一壱二弐三参四五伍六七八九十拾]+[話回」）]*|Episode ?[IⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫVX]+/);
+		if (episodeNumberMatch !== null) {
+			var episodeNumberString = episodeNumberMatch[0];
+
+			episodeNumberString = episodeNumberString
+				.replace(/「|（|#|＃|♯|第|話|回|」|）/g, '')
+				.replace(/０|零/g, '0')
+				.replace(/４|Ⅳ|IV|ＩＶ/g, '4')
+				.replace(/８|Ⅷ|VIII|ＶＩＩＩ/g, '8')
+				.replace(/７|Ⅶ|VII|ＶＩＩ/g, '7')
+				.replace(/６|Ⅵ|VI|ＶＩ/g, '6')
+				.replace(/５|Ⅴ/g, '5')
+				.replace(/９|Ⅸ|IX|ＩＸ/g, '9')
+				.replace(/Ⅻ|XII|ＸＩＩ/g, '12')
+				.replace(/Ⅺ|XI|ＸＩ/g, '11')
+				.replace(/３|Ⅲ|III|ＩＩＩ/g, '3')
+				.replace(/２|Ⅱ|II|ＩＩ/g, '2')
+				.replace(/１|Ⅰ|I|Ｉ/g, '1')
+				.replace(/Ⅹ|X|Ｘ/g, '10')
+				.replace(/二十一/g, '21')
+				.replace(/二十二/g, '22')
+				.replace(/二十三/g, '23')
+				.replace(/二十四/g, '24')
+				.replace(/二十/g, '20')
+				.replace(/十一/g, '11')
+				.replace(/十二/g, '12')
+				.replace(/十三/g, '13')
+				.replace(/十四/g, '14')
+				.replace(/十五/g, '15')
+				.replace(/十六/g, '16')
+				.replace(/十七/g, '17')
+				.replace(/十八/g, '18')
+				.replace(/十九/g, '19')
+				.replace(/十/g, '10')
+				.replace(/一/g, '1')
+				.replace(/二/g, '2')
+				.replace(/三/g, '3')
+				.replace(/四/g, '4')
+				.replace(/五/g, '5')
+				.replace(/六/g, '6')
+				.replace(/七/g, '7')
+				.replace(/八/g, '8')
+				.replace(/九/g, '9')
+				.trim();
+
+			episodeNumber = parseInt(episodeNumberString, 10);
+		}
+		if (episodeNumber === null && flags.indexOf('新') !== -1) {
 			episodeNumber = 1;
-		} else {
-			var episodeNumberMatch = (c.title[0]._ + ' ' + desc).match(/(#|＃|♯)[0-9０１２３４５６７８９]+|第([0-9]+|[０１２３４５６７８９零一二三四五六七八九十]+)(憑目|話)|Episode ?[IⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫVX]+/);
-			if (episodeNumberMatch !== null) {
-				var episodeNumberString = episodeNumberMatch[0];
-				
-				episodeNumberString = episodeNumberString
-					.replace(/#|＃|♯|第|話|憑目/g, '')
-					.replace(/０|零/g, '0')
-					.replace(/４|Ⅳ|IV|ＩＶ/g, '4')
-					.replace(/８|Ⅷ|VIII|ＶＩＩＩ/g, '8')
-					.replace(/７|Ⅶ|VII|ＶＩＩ/g, '7')
-					.replace(/６|Ⅵ|VI|ＶＩ/g, '6')
-					.replace(/５|Ⅴ/g, '5')
-					.replace(/９|Ⅸ|IX|ＩＸ/g, '9')
-					.replace(/Ⅻ|XII|ＸＩＩ/g, '12')
-					.replace(/Ⅺ|XI|ＸＩ/g, '11')
-					.replace(/３|Ⅲ|III|ＩＩＩ/g, '3')
-					.replace(/２|Ⅱ|II|ＩＩ/g, '2')
-					.replace(/１|Ⅰ|I|Ｉ/g, '1')
-					.replace(/Ⅹ|X|Ｘ/g, '10')
-					.replace(/二十一/g, '21')
-					.replace(/二十二/g, '22')
-					.replace(/二十三/g, '23')
-					.replace(/二十四/g, '24')
-					.replace(/二十/g, '20')
-					.replace(/十一/g, '11')
-					.replace(/十二/g, '12')
-					.replace(/十三/g, '13')
-					.replace(/十四/g, '14')
-					.replace(/十五/g, '15')
-					.replace(/十六/g, '16')
-					.replace(/十七/g, '17')
-					.replace(/十八/g, '18')
-					.replace(/十九/g, '19')
-					.replace(/十/g, '10')
-					.replace(/一/g, '1')
-					.replace(/二/g, '2')
-					.replace(/三/g, '3')
-					.replace(/四/g, '4')
-					.replace(/五/g, '5')
-					.replace(/六/g, '6')
-					.replace(/七/g, '7')
-					.replace(/八/g, '8')
-					.replace(/九/g, '9')
-					.trim();
-				
-				episodeNumber = parseInt(episodeNumberString, 10);
-			}
 		}
 		
 		var tcRegex   = /^(.{4})(.{2})(.{2})(.{2})(.{2})(.{2}).+$/;
@@ -886,7 +929,7 @@ function getEpg() {
 			readStream.pipe(writeStream);
 		} else {
 			// チューナーを選ぶ
-			var tuner = chinachu.getFreeTunerSync(config.tuners, channel.type, true);
+			var tuner = chinachu.getFreeTunerSync(config.tuners, channel.type, true, 0);
 			
 			// チューナーが見つからない
 			if (tuner === null) {
@@ -898,7 +941,7 @@ function getEpg() {
 			
 			// チューナーをロック
 			try {
-				chinachu.lockTunerSync(tuner);
+				chinachu.lockTunerSync(tuner, 0);
 			} catch (e) {
 				util.log('[' + i + '] WARNING: チューナー(' + tuner.n + ')のロックに失敗しました');
 				retry();
@@ -926,7 +969,7 @@ function getEpg() {
 			execRecCmd(function () {
 				// 録画プロセスを生成
 				var recProc = child_process.spawn(recCmd.split(' ')[0], recCmd.replace(/[^ ]+ /, '').split(' '));
-				chinachu.writeTunerPidSync(tuner, recProc.pid);
+				chinachu.writeTunerPidSync(tuner, recProc.pid, 0);
 				util.log('[' + i + '] SPAWN: ' + recCmd + ' (pid=' + recProc.pid + ')');
 			
 				// 一時ファイルへの書き込みストリームを作成
@@ -1034,7 +1077,7 @@ function getEpg() {
 		for (i = 0, l = chs.length; i < l; i++) {
 			ch = chs[i];
 			
-			if (!opts.get('ch') && !opts.get('l') && chinachu.getFreeTunerSync(config.tuners, ch.type, true) === null) {
+			if (!opts.get('ch') && !opts.get('l') && chinachu.getFreeTunerSync(config.tuners, ch.type, true, 0) === null) {
 				continue;
 			}
 			
@@ -1075,7 +1118,7 @@ function getEpg() {
 // 既に実行中か
 isRunning(function (running) {
 	if (running) {
-		util.error('ERROR: Scheduler is already running.');
+		console.error('ERROR: Scheduler is already running.');
 		process.exit(1);
 	} else {
 		createPidFile();
@@ -1086,7 +1129,16 @@ isRunning(function (running) {
 		
 		// EPGデータを取得または番組表を読み込む
 		if (opts.get('f') || schedule.length === 0) {
+			var commandProcess;
+			if (config.epgStartCommand) {
+				commandProcess = child_process.spawnSync(config.epgStartCommand, [process.pid, RULES_FILE, RESERVES_DATA_FILE, SCHEDULE_DATA_FILE]);
+				util.log('SPAWN: ' + config.epgStartCommand + ' (pid=' + commandProcess.pid + ')');
+			}
 			getEpg();
+			if (config.epgEndCommand) {
+				commandProcess = child_process.spawn(config.epgEndCommand, [process.pid, RULES_FILE, RESERVES_DATA_FILE, SCHEDULE_DATA_FILE]);
+				util.log('SPAWN: ' + config.epgEndCommand + ' (pid=' + commandProcess.pid + ')');
+			}
 		} else {
 			scheduler();
 		}
