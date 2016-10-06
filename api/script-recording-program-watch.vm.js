@@ -64,7 +64,7 @@
 				case 'mp4':
 					d.f      = 'mp4';
 					d['c:v'] = d['c:v'] || 'libx264';
-					d['c:a'] = d['c:a'] || 'libvo_aacenc';
+					d['c:a'] = d['c:a'] || 'aac';
 					break;
 				case 'webm':
 					d.f      = 'webm';
@@ -109,7 +109,7 @@
 			}
 
 			if (d.f === 'mp4') {
-				args.push('-movflags', 'frag_keyframe+empty_moov+faststart');
+				args.push('-movflags', 'frag_keyframe+empty_moov+faststart+default_base_moof');
 			}
 
 			args.push('-y', '-f', d.f, 'pipe:1');

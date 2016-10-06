@@ -124,6 +124,11 @@ function main(avinfo) {
 				tsize -= bitrate / 8 * (parseInt(d.ss, 10) - 2);
 			}
 			tsize = Math.floor(tsize);
+			
+			if (request.query.mode == 'download') {
+				var pi = path.parse(program.recorded);
+				response.setHeader('Content-disposition', 'attachment; filename*=UTF-8\'\'' + encodeURIComponent(pi.name + '.' + request.query.ext));
+			}
 
 			// Ranges Support
 			var range = {};
@@ -164,13 +169,11 @@ function main(avinfo) {
 			switch (request.type) {
 				case 'm2ts':
 					d.f      = 'mpegts';
-					d['c:v'] = d['c:v'] || 'libx264';
-					d['c:a'] = d['c:a'] || 'libvo_aacenc';
 					break;
 				case 'mp4':
 					d.f      = 'mp4';
 					d['c:v'] = d['c:v'] || 'libx264';
-					d['c:a'] = d['c:a'] || 'libvo_aacenc';
+					d['c:a'] = d['c:a'] || 'aac';
 					break;
 				case 'webm':
 					d.f      = 'webm';
@@ -220,7 +223,7 @@ function main(avinfo) {
 			}
 
 			if (d.f === 'mp4') {
-				args.push('-movflags', 'frag_keyframe+empty_moov+faststart');
+				args.push('-movflags', 'frag_keyframe+empty_moov+faststart+default_base_moof');
 			}
 
 			args.push('-y', '-f', d.f, 'pipe:1');

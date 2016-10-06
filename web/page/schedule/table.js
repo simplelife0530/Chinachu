@@ -305,6 +305,7 @@
 			var isScrolling = false;
 			this.data.scrollStart = [0, 0];
 			this.data.scrollEnd   = [0, 0];
+			this.data.scrollDelta = [0, 0];
 			this.data.target      = null;
 			
 			var unitlen = this.unitlen = 50;
@@ -353,7 +354,7 @@
 				
 				var x = k;
 				
-				var posX   = (4 + x * (4 + linelen));
+				var posX   = (5 + x * (5 + linelen));
 				var width  = linelen;
 				
 				var ch = new sakura.ui.Container({

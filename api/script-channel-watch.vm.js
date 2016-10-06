@@ -61,7 +61,7 @@ Usushio では使わない
 				case 'mp4':
 					d.f      = 'mp4';
 					d['c:v'] = d['c:v'] || 'libx264';
-					d['c:a'] = d['c:a'] || 'libvo_aacenc';
+					d['c:a'] = d['c:a'] || 'aac';
 					break;
 				case 'webm':
 					d.f      = 'webm';
@@ -101,7 +101,7 @@ Usushio では使わない
 			}
 
 			if (d.f === 'mp4') {
-				args.push('-movflags', 'frag_keyframe+empty_moov+faststart');
+				args.push('-movflags', 'frag_keyframe+empty_moov+faststart+default_base_moof');
 			}
 
 			args.push('-y', '-f', d.f, 'pipe:1');
@@ -134,7 +134,7 @@ Usushio では使わない
 			var recCmd = tuner.command;
 			recCmd = recCmd.replace('<sid>', channel.sid);
 			recCmd = recCmd.replace('<channel>', channel.channel);
-
+			recCmd = recCmd.replace('<type>', channel.type);
 			var recProc = child_process.spawn(recCmd.split(' ')[0], recCmd.replace(/[^ ]+ /, '').split(' '));
 			children.push(recProc.pid);
 			chinachu.writeTunerPidSync(tuner, recProc.pid, 1);
